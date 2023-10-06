@@ -1,0 +1,21 @@
+---
+title: "p8105_hw3_smy2122"
+author: "Sarah Younes"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+First, I will load all the packages I will need: tidyverse.
+
+```{r}
+library(tidyverse)
+```
+
+# Problem 1
+
+# Problem 2
+
+# Problem 3
