@@ -66,17 +66,40 @@ library(p8105.datasets)
 data("brfss_smart2010")
 ```
 
-Now, I will create a data frame for the data set and do some data cleaning.
+Now, I will create a data frame for the data set and do some data cleaning: formatting the data to use appropriate variable names, filtering the data set to focus on the "Overall Health" topic, and organizing responses as a factor taking levels ordered from "Poor" to "Excellent."
 
 ```{r}
 brffs_df =
   p8105.datasets::brfss_smart2010 |>
   janitor::clean_names() |>
-  rename(location_abbr = locationabbr) |>
   separate(locationdesc, into = c("state", "county"), sep = 5) |>
   select(everything(), -state) |>
+  rename(state = locationabbr) |>
   filter(topic == "Overall Health") |>
   mutate(response = forcats::fct_relevel(response, c("Poor", "Fair", "Good", "Very good", "Excellent")))
+```
+
+Now, I will identify the states that were observed at 7 or more locations in 2002 and 2010.
+
+```{r}
+brffs_df |>
+  filter(year == 2002)
+
+brffs_df |>
+  filter(year == 2010)
+```
+
+Now, I will make a spaghetti plot.
+
+```{r}
+brffs_df |>
+  filter(response == "Excellent") |>
+  group_by(state) |>
+  mutate(mean_data_value = mean(data_value)) |>
+  select(year, state, mean_data_value)
+```
+
+```{r}
 ```
 
 # Problem 3
