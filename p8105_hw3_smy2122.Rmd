@@ -23,7 +23,7 @@ library(p8105.datasets)
 data("instacart")
 ```
 
-Now, I will create a data frame for the Instacart data set
+Now, I will create a data frame for the Instacart data set.
 
 ```{r}
 instacart_df =
@@ -32,6 +32,21 @@ instacart_df =
 
 The Instacart data set contains `r ncol(instacart_df)` variables and `r nrow(instacart_df)` observations.
 
+The Instacart dataset contains `r length(unique(instacart_df$aisle_id))` aisles. The aisle most frequently ordered from is aisle `r names(which.max(table(instacart_df$aisle_id)))`, otherwise known as `r names(which.max(table(instacart_df$aisle)))`.
+
+Now, I will make a plot that shows the number of items ordered in each aisle for aisles with more than 10,000 items ordered.
+
+```{r}
+instacart_df_plot =
+  instacart_df |>
+  group_by(aisle_id) |>
+  summarize(count = n_distinct(product_name))
+```
+
+Now, I will make a table showing the three most popular items in 3 aisles.
+
+Now, I will make a table showing the mean hour of the day at which two items were ordered on each day of the week.
+
 # Problem 2
 
 First, I will load the BRFSS dataset.
@@ -39,6 +54,13 @@ First, I will load the BRFSS dataset.
 ```{r}
 library(p8105.datasets)
 data("brfss_smart2010")
+```
+
+Now, I will create a data frame for the data set and do some data cleaning.
+
+```{r}
+brffs_df =
+  p8105.datasets::brfss_smart2010
 ```
 
 # Problem 3
