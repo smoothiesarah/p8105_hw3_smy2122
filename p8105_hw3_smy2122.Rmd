@@ -37,15 +37,25 @@ The Instacart dataset contains `r length(unique(instacart_df$aisle_id))` aisles.
 Now, I will make a plot that shows the number of items ordered in each aisle for aisles with more than 10,000 items ordered.
 
 ```{r}
-instacart_df_plot =
-  instacart_df |>
-  group_by(aisle_id) |>
+instacart_df |>
+  group_by(aisle) |>
   summarize(count = n_distinct(product_name))
 ```
 
-Now, I will make a table showing the three most popular items in 3 aisles.
+Now, I will make a table showing the three most popular items in 3 aisles and the number of times each item was ordered.
+
+```{r}
+instacart_df |>
+  filter(
+    aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")
+  ) |>
+  select(aisle, product_name, order_id)
+```
 
 Now, I will make a table showing the mean hour of the day at which two items were ordered on each day of the week.
+
+```{r}
+```
 
 # Problem 2
 
@@ -60,7 +70,13 @@ Now, I will create a data frame for the data set and do some data cleaning.
 
 ```{r}
 brffs_df =
-  p8105.datasets::brfss_smart2010
+  p8105.datasets::brfss_smart2010 |>
+  janitor::clean_names() |>
+  rename(location_abbr = locationabbr) |>
+  separate(locationdesc, into = c("state", "county"), sep = 5) |>
+  select(everything(), -state) |>
+  filter(topic == "Overall Health") |>
+  mutate(response = forcats::fct_relevel(response, c("Poor", "Fair", "Good", "Very good", "Excellent")))
 ```
 
 # Problem 3
