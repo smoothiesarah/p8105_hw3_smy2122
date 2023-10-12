@@ -202,7 +202,7 @@ accelerometer_df =
 
 Now, I will merge the two data sets using an inner join to only show participants in both data sets.
 
-```{r merge}
+```{r merge, message = FALSE}
 merged_df =
   inner_join(demographic_df, accelerometer_df)
 ```
@@ -219,7 +219,7 @@ merged_df |>
   knitr::kable()
 ```
 
-Below is a box plot of the age distributions for men and women in each education category.
+Below is a box plot of the age distributions for men and women in each education category. The box plot shows that
 
 ```{r age distribution plot}
 merged_df |>
@@ -233,7 +233,9 @@ merged_df |>
   )
 ```
 
-```{r total activity plot}
+Below is a three-panel plot of total activity over the day for men and women of each education level. The plot shows that total physical activity decreases most sharply for men and women with less than a high school education and least sharply for men and women with more than a high school education. Among men and women with a high school education or equivalent, total physical activity sharply dropped between ages 60-63 but then sharply increased around ages 70-34, and a similar (although less strong) trend occurred for men but not women with more than a high school education. By age 80, females with more than a high school education had the highest total physical activity.
+
+```{r total activity plot, message = FALSE, warning = FALSE}
 merged_df |>
   group_by(seqn) |>
   pivot_longer(
@@ -249,14 +251,14 @@ merged_df |>
   facet_grid(sex ~ education) +
   labs(
     x = "Age",
-    y = "Total MIMS activity over the day",
-    title = "Comparison of the total activity over the day for men and women of each education level"
+    y = "Total physical activity over the day (measured by MIMS)",
+    title = "Comparison of the total physical activity over the day for men and women of each education level"
   )
 ```
 
-Below is a three-panel plot that shows the 24-hour activity time courses for each education level.
+Below is a three-panel plot that shows the 24-hour activity time courses for each education level. The plot shows that, for those with less than a high school education or with a high school education or equivalent, physical activity is highest on average in the early afternoon before noon, whereas for those with more than a high school education, physical activity peaks twice: right before noon and in the evening. (This trend may reflect the possibility that men and women with more than a high school education may be more likely to work traditional 9am to 5pm corporate-style jobs.) Physical activity for women of all education levels seems highest before noon whereas physical activity for men of all education levels seems highest in the evening.
 
-```{r three-panel plot}
+```{r three-panel plot, message = FALSE, warning = FALSE}
 merged_df |>
   pivot_longer(
     min1:min1440,
@@ -271,8 +273,8 @@ merged_df |>
   facet_grid(. ~ education) +
   labs(
     x = "Minute",
-    y = "MIMS value",
+    y = "Physical activity (measured by MIMS)",
     color = "Sex",
-    title = "24-hour MIMS activity for each education level"
+    title = "24-hour physical activity for each education level"
   )
 ```
