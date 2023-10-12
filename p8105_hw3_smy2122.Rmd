@@ -50,7 +50,7 @@ instacart_df |>
   labs(caption = "Among aisles with more than 10,000 items ordered")
 ```
 
-Now, I will make a table showing the three most popular items in 3 aisles and the number of times each item was ordered.
+Now, I will make a table showing the top 3 most popular items in 3 aisles (baking ingredients, dog food care, and packaged vegetables fruits) and the number of times each item was ordered.
 
 ```{r instacart table}
 instacart_df |>
@@ -70,7 +70,13 @@ Now, I will make a table showing the mean hour of the day at which two items wer
 
 ```{r}
 instacart_df |>
-  filter(product_name == c("Pink Lady Apples", "Coffee Ice Cream")
+  filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
+  group_by(product_name, order_dow) |>
+  summarize(mean_hour = mean(order_hour_of_day)) |>
+  pivot_wider(
+    names_from = order_dow, 
+    values_from = mean_hour) |>
+  knitr::kable()
 ```
 
 # Problem 2
@@ -93,8 +99,9 @@ brffs_df =
   rename(state = locationabbr) |>
   filter(
     topic == "Overall Health",
-    response == c("Poor", "Fair", "Good", "Very good", "Excellent") |>
-  mutate(response = fct_relevel(response, c("Poor", "Fair", "Good", "Very good", "Excellent")))
+    response %in% c("Poor", "Fair", "Good", "Very good", "Excellent")) |>
+  mutate(response = fct_relevel(response, c("Poor", "Fair", "Good", "Very good", "Excellent"))) |>
+  select(year, state, county, topic, response, data_value)
 ```
 
 Now, I will identify the states that were observed at 7 or more locations in 2002 and 2010.
@@ -102,7 +109,17 @@ Now, I will identify the states that were observed at 7 or more locations in 200
 ```{r states observed}
 brffs_df |>
   select(year, state, county) |>
-  filter(year == 2002 | year == 2010) |>
+  filter(year == 2002) |>
+  distinct() |>
+  group_by(state, year) |>
+  summarize(n = n()) |>
+  filter(n >= 7) |>
+  arrange(year, desc(n)) |>
+  knitr::kable()
+
+brffs_df |>
+  select(year, state, county) |>
+  filter(year == 2010) |>
   distinct() |>
   group_by(state, year) |>
   summarize(n = n()) |>
@@ -111,7 +128,7 @@ brffs_df |>
   knitr::kable()
 ```
 
-Now, I will make a spaghetti plot.
+Now, I will make a spaghetti plot showing the average value over time for each state from 2002 to 2010.
 
 ```{r spaghetti plot, message=FALSE, warning=FALSE}
 brffs_df |>
@@ -119,17 +136,45 @@ brffs_df |>
   group_by(year, state) |>
   summarize(mean_data_value = mean(data_value)) |>
   ggplot(aes(x = year, y = mean_data_value, group = state, color = state)) +
-  geom_line()
+  geom_line() +
+  labs(
+    x = "Year",
+    y = "Mean value",
+    color = "State",
+    title = "The average data value over time for each state from 2002 to 2010")
 ```
 
-Now, I will make a two-panel plot.
+Below is a two-panel plot showing the distribution of data value for responses among locations in New York State in 2006 and 2010.
 
 ```{r two-panel plot}
-brffs_df_2006 =
-  brffs_df |>
-  filter(year == 2006, state == "NY") |>
-  ggplot(aes(x = response, y = data_value)) +
-  geom_point()
+brffs_df |>
+  filter(
+    year == c(2006, 2010),
+    state == "NY") |>
+  ggplot(aes(x = response, y = data_value, color = county)) +
+  geom_boxplot() +
+  facet_grid(. ~ year) +
+  labs(
+    x = "Response",
+    y = "Data value",
+    color = "Location",
+    title = "Distribution of data values for responses among locations in New York State in 2006 and 2010"
+  )
 ```
 
 # Problem 3
+
+First, I will import the data set.
+
+```{r}
+demographic_df =
+  read_csv(
+    "./data/nhanes_covar.csv",
+    skip = 4,
+    na = "NA") |>
+  janitor::clean_names()
+
+accelerometer_df =
+  read_csv("./data/nhanes_accel.csv") |>
+  janitor::clean_names()
+```
