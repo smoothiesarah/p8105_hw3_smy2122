@@ -68,7 +68,7 @@ instacart_df |>
 
 Now, I will make a table showing the mean hour of the day at which two items were ordered on each day of the week.
 
-```{r}
+```{r day of week table, message = FALSE}
 instacart_df |>
   filter(product_name %in% c("Pink Lady Apples", "Coffee Ice Cream")) |>
   group_by(product_name, order_dow) |>
@@ -106,7 +106,7 @@ brffs_df =
 
 Now, I will identify the states that were observed at 7 or more locations in 2002 and 2010.
 
-```{r states observed}
+```{r states observed, message = FALSE}
 brffs_df |>
   select(year, state, county) |>
   filter(year == 2002) |>
@@ -151,7 +151,7 @@ brffs_df |>
   filter(
     year == c(2006, 2010),
     state == "NY") |>
-  ggplot(aes(x = response, y = data_value, color = county)) +
+  ggplot(aes(x = response, y = data_value)) +
   geom_boxplot() +
   facet_grid(. ~ year) +
   labs(
@@ -164,17 +164,66 @@ brffs_df |>
 
 # Problem 3
 
-First, I will import the data set.
+First, I will import, clean, and tidy the two data sets.
 
-```{r}
+```{r load and clean data sets, message = FALSE}
 demographic_df =
   read_csv(
     "./data/nhanes_covar.csv",
     skip = 4,
     na = "NA") |>
-  janitor::clean_names()
+  janitor::clean_names() |>
+  filter(age >= 21) |>
+  drop_na() |>
+  mutate(
+    sex =
+      case_match(
+        sex,
+        1 ~ "male",
+        2 ~ "female"),
+        sex = as.factor(sex)
+  ) |>
+  mutate(
+    education =
+      case_match(
+        education,
+        1 ~ "less than high school",
+        2 ~ "high school equivalent",
+        3 ~ "more than high school"),
+    education = as.factor(education)
+  )
 
 accelerometer_df =
   read_csv("./data/nhanes_accel.csv") |>
   janitor::clean_names()
+```
+
+Now, I will merge the two data sets.
+
+```{r merge}
+merged_df =
+  inner_join(demographic_df, accelerometer_df)
+```
+
+Below is a table of the number of men and women in each education category.
+
+```{r table}
+demographic_df |>
+  count(sex, education) |>
+  pivot_wider(
+    names_from = "education",
+    values_from = n
+  ) |>
+  knitr::kable()
+```
+
+Below is a visualization of the age distributions for men and women in each education category.
+
+```{r visualization}
+```
+
+```{r plot}
+```
+
+```{r three-panel plot}
 ```
