@@ -129,7 +129,7 @@ brffs_df |>
   knitr::kable()
 ```
 
-Below is a spaghetti plot showing the average value over time for each state from 2002 to 2010.
+Below is a spaghetti plot showing the average value over time for each state from 2002 to 2010. Overall, the plot shows a slight decrease in mean value over time across most states despite immense variation across state and year.
 
 ```{r spaghetti plot, message = FALSE, warning = FALSE}
 brffs_df |>
@@ -145,7 +145,7 @@ brffs_df |>
     title = "The average data value over time for each state from 2002 to 2010")
 ```
 
-Below is a two-panel plot showing the distribution of data value for responses among locations in New York State in 2006 and 2010.
+Below is a two-panel plot showing the distribution of data value for responses among locations in New York State in 2006 and 2010. The plot shows that data values were highest for "Very good" and "Good" responses in both 2006 and 2010.
 
 ```{r two-panel plot, warning = FALSE}
 brffs_df |>
@@ -165,7 +165,7 @@ brffs_df |>
 
 # Problem 3
 
-First, I will import, clean, and tidy the two data sets.
+First, I will import, clean, and tidy the two data sets. As part of data cleaning for the demographics data set, I will remove the unnecessary rows, set missing values, clean variable names, exclude participants under age 21, drop those with missing demographic data, encode sex and education as factors, and re-level education. Data cleaning for the accelerometer data set only needs cleaning variable names, as there are no unnecessary rows and no missing values.
 
 ```{r load and clean data sets, message = FALSE}
 demographic_df =
@@ -200,7 +200,7 @@ accelerometer_df =
   janitor::clean_names()
 ```
 
-Now, I will merge the two data sets.
+Now, I will merge the two data sets using an inner join to only show participants in both data sets.
 
 ```{r merge}
 merged_df =
@@ -219,16 +219,21 @@ merged_df |>
   knitr::kable()
 ```
 
-Below is a visualization of the age distributions for men and women in each education category.
+Below is a box plot of the age distributions for men and women in each education category.
 
-```{r visualization}
+```{r age distribution plot}
 merged_df |>
   ggplot(aes(x = sex, y = age)) +
   geom_boxplot() +
-  facet_grid(. ~ education)
+  facet_grid(. ~ education) +
+  labs(
+    x = "Sex",
+    y = "Age",
+    title = "Age distribution among men and women in each education category"
+  )
 ```
 
-```{r plot}
+```{r total activity plot}
 merged_df |>
   group_by(seqn) |>
   pivot_longer(
@@ -237,23 +242,37 @@ merged_df |>
     values_to = "activity"
   ) |>
   mutate(total_activity = sum(activity)) |>
-  ungroup() |>
   select(seqn, sex, age, bmi, education, total_activity) |>
   ggplot(aes(x = age, y = total_activity)) +
   geom_point() +
   geom_smooth() +
-  facet_grid(sex ~ education)
+  facet_grid(sex ~ education) +
+  labs(
+    x = "Age",
+    y = "Total MIMS activity over the day",
+    title = "Comparison of the total activity over the day for men and women of each education level"
+  )
 ```
+
+Below is a three-panel plot that shows the 24-hour activity time courses for each education level.
 
 ```{r three-panel plot}
 merged_df |>
   pivot_longer(
     min1:min1440,
     names_to = "minute",
+    names_prefix = "min",
     values_to = "activity"
   ) |>
+  mutate(minute = as.numeric(minute)) |>
   ggplot(aes(x = minute, y = activity, color = sex)) +
   geom_line() +
   geom_smooth(aes(group = sex)) +
-  facet_grid(. ~ education)
+  facet_grid(. ~ education) +
+  labs(
+    x = "Minute",
+    y = "MIMS value",
+    color = "Sex",
+    title = "24-hour MIMS activity for each education level"
+  )
 ```
