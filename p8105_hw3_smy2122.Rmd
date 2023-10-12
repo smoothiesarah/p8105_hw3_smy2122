@@ -8,10 +8,11 @@ output: github_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-First, I will load all the packages I will need for this homework assignment: tidyverse.
+As always, I will begin by loading all the packages I will need for this homework assignment: tidyverse, ggridges, and p8105.datasets.
 
 ```{r load packages, message = FALSE}
 library(tidyverse)
+library(ggridges)
 library(p8105.datasets)
 ```
 
@@ -104,7 +105,7 @@ brffs_df =
   select(year, state, county, topic, response, data_value)
 ```
 
-Now, I will identify the states that were observed at 7 or more locations in 2002 and 2010.
+The tables below show the states that were observed at 7 or more locations in 2002 and 2010.
 
 ```{r states observed, message = FALSE}
 brffs_df |>
@@ -128,9 +129,9 @@ brffs_df |>
   knitr::kable()
 ```
 
-Now, I will make a spaghetti plot showing the average value over time for each state from 2002 to 2010.
+Below is a spaghetti plot showing the average value over time for each state from 2002 to 2010.
 
-```{r spaghetti plot, message=FALSE, warning=FALSE}
+```{r spaghetti plot, message = FALSE, warning = FALSE}
 brffs_df |>
   filter(response == "Excellent") |>
   group_by(year, state) |>
@@ -146,7 +147,7 @@ brffs_df |>
 
 Below is a two-panel plot showing the distribution of data value for responses among locations in New York State in 2006 and 2010.
 
-```{r two-panel plot}
+```{r two-panel plot, warning = FALSE}
 brffs_df |>
   filter(
     year == c(2006, 2010),
@@ -191,7 +192,8 @@ demographic_df =
         2 ~ "high school equivalent",
         3 ~ "more than high school"),
     education = as.factor(education)
-  )
+  ) |>
+  mutate(education = fct_relevel(education, c("less than high school", "high school equivalent", "more than high school")))
 
 accelerometer_df =
   read_csv("./data/nhanes_accel.csv") |>
@@ -208,7 +210,7 @@ merged_df =
 Below is a table of the number of men and women in each education category.
 
 ```{r table}
-demographic_df |>
+merged_df |>
   count(sex, education) |>
   pivot_wider(
     names_from = "education",
@@ -220,10 +222,38 @@ demographic_df |>
 Below is a visualization of the age distributions for men and women in each education category.
 
 ```{r visualization}
+merged_df |>
+  ggplot(aes(x = sex, y = age)) +
+  geom_boxplot() +
+  facet_grid(. ~ education)
 ```
 
 ```{r plot}
+merged_df |>
+  group_by(seqn) |>
+  pivot_longer(
+    min1:min1440,
+    names_to = "minute",
+    values_to = "activity"
+  ) |>
+  mutate(total_activity = sum(activity)) |>
+  ungroup() |>
+  select(seqn, sex, age, bmi, education, total_activity) |>
+  ggplot(aes(x = age, y = total_activity)) +
+  geom_point() +
+  geom_smooth() +
+  facet_grid(sex ~ education)
 ```
 
 ```{r three-panel plot}
+merged_df |>
+  pivot_longer(
+    min1:min1440,
+    names_to = "minute",
+    values_to = "activity"
+  ) |>
+  ggplot(aes(x = minute, y = activity, color = sex)) +
+  geom_line() +
+  geom_smooth(aes(group = sex)) +
+  facet_grid(. ~ education)
 ```
