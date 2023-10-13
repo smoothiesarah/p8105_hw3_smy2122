@@ -47,6 +47,7 @@ instacart_df |>
   mutate(aisle = fct_reorder(aisle, n)) |>
   ggplot(aes(x = aisle, y = n, color = aisle)) +
   geom_point() +
+  scale_x_discrete(guide = guide_axis(angle = -90)) +
   labs(title = "Number of items ordered in each aisle") +
   labs(caption = "Among aisles with more than 10,000 items ordered")
 ```
@@ -105,7 +106,7 @@ brffs_df =
   select(year, state, county, topic, response, data_value)
 ```
 
-The tables below show the states that were observed at 7 or more locations in 2002 and 2010.
+The tables below show the states that were observed at 7 or more locations in 2002 and 2010. As shown in the first table below, the following states were observed at 7 or more locations in 2002: `PA, MA, NJ, CT, FL, and NC`. As shown in the second table below, the following states were observed at 7 or more locations in 2010: `FL, NJ, TX, CA, MD, NC, NE, WA, MA, NY, OH, CO, PA, and SC`.
 
 ```{r states observed, message = FALSE}
 brffs_df |>
@@ -165,7 +166,7 @@ brffs_df |>
 
 # Problem 3
 
-First, I will import, clean, and tidy the two data sets. As part of data cleaning for the demographics data set, I will remove the unnecessary rows, set missing values, clean variable names, exclude participants under age 21, drop those with missing demographic data, encode sex and education as factors, and re-level education. Data cleaning for the accelerometer data set only needs cleaning variable names, as there are no unnecessary rows and no missing values.
+First, I will import, clean, and tidy the two data sets. As part of data cleaning for the demographics data set, I will remove the unnecessary rows, set missing values, clean variable names, exclude participants under age 21, drop those with missing demographic data, encode sex and education as factors, and re-level education. Data cleaning for the accelerometer data set needs cleaning variable names, as there are no unnecessary rows and no missing values, and pivoting longer.
 
 ```{r load and clean data sets, message = FALSE}
 demographic_df =
@@ -197,20 +198,28 @@ demographic_df =
 
 accelerometer_df =
   read_csv("./data/nhanes_accel.csv") |>
-  janitor::clean_names()
+  janitor::clean_names() |>
+  pivot_longer(
+    min1:min1440,
+    names_to = "minute",
+    names_prefix = "min",
+    values_to = "activity"
+  ) |>
+  mutate(minute = as.numeric(minute))
 ```
 
 Now, I will merge the two data sets using an inner join to only show participants in both data sets.
 
 ```{r merge, message = FALSE}
 merged_df =
-  inner_join(demographic_df, accelerometer_df)
+  inner_join(demographic_df, accelerometer_df, by = "seqn")
 ```
 
 Below is a table of the number of men and women in each education category.
 
 ```{r table}
-merged_df |>
+demographic_df |>
+  group_by(sex, education) |>
   count(sex, education) |>
   pivot_wider(
     names_from = "education",
@@ -219,7 +228,7 @@ merged_df |>
   knitr::kable()
 ```
 
-Below is a box plot of the age distributions for men and women in each education category. The box plot shows that
+Below is a box plot of the age distributions for men and women in each education category. The box plot shows that male and female participants with a less than high school education were slightly older than male and female participants with a high school or equivalent education and significantly older than male and female participants with more than a high school education, as the average age of male and female participants with less than a high school education was `r merged_df |> filter(education == "less than high school") |> summarize(mean_age = mean(age)) |> pull(mean_age) |> round(2)`. The box plot further shows that female participants were slightly older than male participants if the education level was less than high school or high school equivalent, but male participants were slightly older than female participants in the more than a high school education level.
 
 ```{r age distribution plot}
 merged_df |>
@@ -233,22 +242,16 @@ merged_df |>
   )
 ```
 
-Below is a three-panel plot of total activity over the day for men and women of each education level. The plot shows that total physical activity decreases most sharply for men and women with less than a high school education and least sharply for men and women with more than a high school education. Among men and women with a high school education or equivalent, total physical activity sharply dropped between ages 60-63 but then sharply increased around ages 70-34, and a similar (although less strong) trend occurred for men but not women with more than a high school education. By age 80, females with more than a high school education had the highest total physical activity.
+Below is a plot of total activity over the day for men and women of each education level from ages 22 to 80. The plot shows that total physical activity decreases most sharply over time for men and women with less than a high school education and least sharply over time for men and women with more than a high school education. Plateaus were not consistent across education level: men and women with less than a high school equivalent had the highest total physical activity around age 24 and then around age 59, whereas men and women with a high school or equivalent education had their highest total physical activity around age 39 and men and women had their highest total physical activity around age 22 and then age 45 for men and 60 for women. Gaps between physical activity among men and women were strongest among those with a high school or equivalent education.
 
 ```{r total activity plot, message = FALSE, warning = FALSE}
 merged_df |>
-  group_by(seqn) |>
-  pivot_longer(
-    min1:min1440,
-    names_to = "minute",
-    values_to = "activity"
-  ) |>
-  mutate(total_activity = sum(activity)) |>
-  select(seqn, sex, age, bmi, education, total_activity) |>
-  ggplot(aes(x = age, y = total_activity)) +
+  group_by(seqn, sex, age, education) |>
+  summarize(total_activity = sum(activity)) |>
+  ggplot(aes(x = age, y = total_activity, color = sex)) +
   geom_point() +
   geom_smooth() +
-  facet_grid(sex ~ education) +
+  facet_grid(. ~ education) +
   labs(
     x = "Age",
     y = "Total physical activity over the day (measured by MIMS)",
@@ -260,15 +263,9 @@ Below is a three-panel plot that shows the 24-hour activity time courses for eac
 
 ```{r three-panel plot, message = FALSE, warning = FALSE}
 merged_df |>
-  pivot_longer(
-    min1:min1440,
-    names_to = "minute",
-    names_prefix = "min",
-    values_to = "activity"
-  ) |>
-  mutate(minute = as.numeric(minute)) |>
+  group_by(seqn) |>
   ggplot(aes(x = minute, y = activity, color = sex)) +
-  geom_line() +
+  geom_line(alpha = 0.1) +
   geom_smooth(aes(group = sex)) +
   facet_grid(. ~ education) +
   labs(
